@@ -1,68 +1,49 @@
-import React from 'react';
+// screens/MovieDetailsScreen.js
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Image,
+  StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Alert,
+  ActivityIndicator
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getMovieDetails, getImageUrl } from '../services/tmdb';
 
-export default function MovieDetailsScreen({ route, navigation }) {
-  const { movie } = route.params;
+export default function MovieDetailsScreen({ route }) {
+  const { movieId } = route.params;
+  const [filme, setFilme] = useState(null);
 
-  const salvarFavorito = async () => {
-    try {
-      const json = await AsyncStorage.getItem('@filmesFavoritos');
-      const favoritos = json ? JSON.parse(json) : [];
-
-      const jaExiste = favoritos.some((f) => f.id === movie.id);
-      if (jaExiste) {
-        Alert.alert('Atenção', 'Este filme já está nos seus favoritos.');
-        return;
-      }
-
-      favoritos.push(movie);
-      await AsyncStorage.setItem('@filmesFavoritos', JSON.stringify(favoritos));
-      Alert.alert('Sucesso', 'Filme salvo nos favoritos!');
-    } catch (e) {
-      Alert.alert('Erro', 'Não foi possível salvar o filme.');
+  useEffect(() => {
+    async function fetchFilme() {
+      const data = await getMovieDetails(movieId);
+      setFilme(data);
     }
-  };
+    fetchFilme();
+  }, [movieId]);
+
+  if (!filme) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#0077b6" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
-      {movie.poster_path ? (
-        <Image
-          source={{ uri: `https://image.tmdb.org/t/p/w500${movie.poster_path}` }}
-          style={styles.poster}
-        />
-      ) : (
-        <Text style={styles.noImage}>Imagem não disponível</Text>
-      )}
+      <Image
+        source={{ uri: getImageUrl(filme.backdrop_path || filme.poster_path) }}
+        style={styles.image}
+      />
+      <View style={styles.infoContainer}>
+        <Text style={styles.title}>{filme.title}</Text>
 
-      <Text style={styles.title}>{movie.title}</Text>
+        <Text style={styles.subtitle}>Lançamento: {filme.release_date}</Text>
+        <Text style={styles.subtitle}>Nota: {filme.vote_average} ⭐</Text>
 
-      <Text style={styles.label}>📅 Lançamento:</Text>
-      <Text style={styles.text}>{movie.release_date || 'Indisponível'}</Text>
-
-      <Text style={styles.label}>⭐ Avaliação:</Text>
-      <Text style={styles.text}>{movie.vote_average}/10</Text>
-
-      <Text style={styles.label}>📖 Sinopse:</Text>
-      <Text style={styles.overview}>
-        {movie.overview || 'Sinopse não disponível.'}
-      </Text>
-
-      <TouchableOpacity style={styles.btn} onPress={salvarFavorito}>
-        <Text style={styles.btnText}>💾 Salvar nos Favoritos</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.btnVoltar} onPress={() => navigation.goBack()}>
-        <Text style={styles.btnText}>⬅ Voltar</Text>
-      </TouchableOpacity>
+        <Text style={styles.overview}>{filme.overview || 'Sem sinopse disponível.'}</Text>
+      </View>
     </ScrollView>
   );
 }
@@ -70,64 +51,36 @@ export default function MovieDetailsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    padding: 20,
+    backgroundColor: '#000'
   },
-  poster: {
+  loading: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  image: {
     width: '100%',
-    height: 500,
-    borderRadius: 12,
-    marginBottom: 20,
+    height: 250
   },
-  noImage: {
-    color: '#ccc',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
+  infoContainer: {
+    padding: 16
   },
   title: {
-    color: '#0077b6',
+    color: '#fff',
     fontSize: 26,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10
   },
-  label: {
-    color: '#0077b6',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 15,
-    marginBottom: 5,
-  },
-  text: {
-    color: '#fff',
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  overview: {
+  subtitle: {
     color: '#ccc',
     fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 30,
+    marginBottom: 6
   },
-  btn: {
-    backgroundColor: '#0077b6',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  btnVoltar: {
-    backgroundColor: '#1e1e1e',
-    borderWidth: 1,
-    borderColor: '#0077b6',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  btnText: {
-    color: '#fff',
+  overview: {
+    color: '#ddd',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
+    marginTop: 12,
+    lineHeight: 22
+  }
 });

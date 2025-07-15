@@ -1,78 +1,86 @@
-import React, { useEffect, useState } from 'react';
+// screens/MovieListScreen.js
+import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
+  TextInput,
   FlatList,
-  Image,
   TouchableOpacity,
+  Text,
   StyleSheet,
-  Alert,
+  Image,
+  Keyboard
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { searchMovies, getPopularMovies, getImageUrl } from '../services/tmdb';
+import { useNavigation } from '@react-navigation/native';
+import { Keyboard } from 'react-native';
 
-export default function FavoritesScreen() {
-  const [favoritos, setFavoritos] = useState([]);
+
+
+export default function MovieListScreen() {
+  const [query, setQuery] = useState('');
+  const [filmes, setFilmes] = useState([]);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
-    carregarFavoritos();
+    carregarPopulares();
   }, []);
 
-  const carregarFavoritos = async () => {
-    try {
-      const json = await AsyncStorage.getItem('@filmesFavoritos');
-      const data = json ? JSON.parse(json) : [];
-      setFavoritos(data);
-    } catch (e) {
-      console.log('Erro ao carregar favoritos:', e);
+  const carregarPopulares = async () => {
+    const data = await getPopularMovies();
+    setFilmes(data);
+  };
+
+  const buscarFilmes = async () => {
+    Keyboard.dismiss();
+    if (query.trim() === '') {
+      carregarPopulares();
+    } else {
+      const data = await searchMovies(query);
+      setFilmes(data);
     }
   };
 
-  const removerFavorito = async (id) => {
-    const novos = favoritos.filter((item) => item.id !== id);
-    setFavoritos(novos);
-    await AsyncStorage.setItem('@filmesFavoritos', JSON.stringify(novos));
-    Alert.alert('Removido', 'Filme removido dos favoritos.');
-  };
+  
 
-  if (favoritos.length === 0) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>🎥 Favoritos</Text>
-        <Text style={styles.vazio}>Você ainda não adicionou nenhum filme.</Text>
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('MovieDetails', { movieId: item.id })}
+    >
+      <Image
+        source={{ uri: getImageUrl(item.poster_path) }}
+        style={styles.image}
+      />
+      <View style={styles.cardFooter}>
+        <Text style={styles.title} numberOfLines={1}>
+          {item.title}
+        </Text>
+        
       </View>
-    );
-  }
+    </TouchableOpacity>
+  );
+  
+
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>⭐ Meus Favoritos</Text>
+      <TextInput
+        placeholder="Buscar filme..."
+        placeholderTextColor="#888"
+        style={styles.input}
+        value={query}
+        onChangeText={setQuery}
+        onSubmitEditing={buscarFilmes}
+      />
 
       <FlatList
-        data={favoritos}
-        keyExtractor={(item) => item.id.toString()}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            {item.poster_path ? (
-              <Image
-                source={{
-                  uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
-                }}
-                style={styles.poster}
-              />
-            ) : (
-              <Text style={styles.noImage}>Sem imagem</Text>
-            )}
-            <Text style={styles.movieTitle}>{item.title}</Text>
+        data={filmes}
 
-            <TouchableOpacity
-              style={styles.btnRemover}
-              onPress={() => removerFavorito(item.id)}
-            >
-              <Text style={styles.btnText}>Remover</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={styles.list}
+        numColumns={2}
       />
     </View>
   );
@@ -81,59 +89,41 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    padding: 20,
+    backgroundColor: '#000',
+    paddingTop: 10,
+    paddingHorizontal: 12
   },
-  title: {
-    fontSize: 26,
-    color: '#0077b6',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    textTransform: 'uppercase',
+  input: {
+    backgroundColor: '#111',
+    color: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10
   },
-  vazio: {
-    color: '#ccc',
-    fontSize: 16,
-    textAlign: 'center',
+  list: {
+    paddingBottom: 20
   },
   card: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 10,
-    marginBottom: 20,
-    padding: 15,
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  poster: {
-    width: '100%',
-    height: 300,
-    borderRadius: 10,
-  },
-  movieTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginVertical: 10,
-  },
-  btnRemover: {
-    backgroundColor: '#0077b6',
-    padding: 10,
+    backgroundColor: '#111',
     borderRadius: 8,
-    alignItems: 'center',
+    margin: 6,
+    flex: 1,
+    overflow: 'hidden'
   },
-  btnText: {
+  image: {
+    height: 220,
+    width: '100%'
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 8,
+    alignItems: 'center'
+  },
+  title: {
     color: '#fff',
-    fontSize: 16,
     fontWeight: 'bold',
-  },
-  noImage: {
-    color: '#ccc',
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
+    flex: 1,
+    marginRight: 8
+  }
 });

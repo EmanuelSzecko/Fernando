@@ -1,20 +1,32 @@
-
-const API_KEY = 'dd549f500ef9d4ea43c748bfec0cfa06'; // substitua pela sua chave real da TMDB
+const API_KEY = 'dd549f500ef9d4ea43c748bfec0cfa06';
 const BASE_URL = 'https://api.themoviedb.org/3';
-
-export async function getPopularMovies() {
-  try {
-    const response = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}&language=pt-BR`);
-    if (!response.ok) {
-      console.error('❌ Erro ao buscar filmes:', response.status);
-      return [];
-    }
-
-    const json = await response.json();
-    console.log('✅ Filmes carregados:', json.results);
-    return json.results;
-  } catch (error) {
-    console.error('❌ Erro na chamada da API TMDB:', error);
-    return [];
+import axios from "axios";
+const api = axios.create({
+  baseURL: BASE_URL,
+  params: {
+    api_key: API_KEY,
+    language: 'pt-BR'
   }
-}
+});
+
+
+export const getPopularMovies = async () => {
+  const response = await api.get('/movie/popular');
+  return response.data.results;
+};
+
+export const searchMovies = async (query) => {
+  const response = await api.get('/search/movie', {
+    params: { query }
+  });
+  return response.data.results;
+};
+
+export const getMovieDetails = async (id) => {
+  const response = await api.get(`/movie/${id}`);
+  return response.data;
+};
+
+export const getImageUrl = (path, size = 'w500') => {
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+};

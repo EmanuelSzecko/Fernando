@@ -1,59 +1,61 @@
-import React from 'react';
+// App.js
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 
-// Telas
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import RecoverScreen from './screens/RecoverScreen';
-
 import HomeScreen from './screens/HomeScreen';
 import MovieListScreen from './screens/MovieListScreen';
-import FavoritesScreen from './screens/FavoritesScreen';
+
 import AboutScreen from './screens/AboutScreen';
 import MovieDetailsScreen from './screens/MovieDetailsScreen';
+
+import { auth } from './services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function BottomTabs() {
+function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#121212' },
-        tabBarActiveTintColor: '#0077b6',
-        tabBarInactiveTintColor: '#aaa',
+        tabBarStyle: { backgroundColor: '#000' },
+        tabBarActiveTintColor: '#00b4d8',
+        tabBarInactiveTintColor: '#888'
       }}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <Icon name="home-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" color={color} size={size} />
+          )
         }}
       />
       <Tab.Screen
-        name="Filmes"
+        name="Buscar"
         component={MovieListScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <Icon name="film-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search-outline" color={color} size={size} />
+          )
         }}
       />
-      <Tab.Screen
-        name="Favoritos"
-        component={FavoritesScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => <Icon name="heart-outline" color={color} size={size} />,
-        }}
-      />
+      
       <Tab.Screen
         name="Sobre"
         component={AboutScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <Icon name="information-circle-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="information-circle-outline" color={color} size={size} />
+          )
         }}
       />
     </Tab.Navigator>
@@ -61,14 +63,35 @@ function BottomTabs() {
 }
 
 export default function App() {
+  const [usuario, setUsuario] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUsuario(user);
+      setCarregando(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (carregando) return null;
+
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Recover" component={RecoverScreen} />
-        <Stack.Screen name="Main" component={BottomTabs} />
-        <Stack.Screen name="MovieDetails" component={MovieDetailsScreen} />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {usuario ? (
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="MovieDetails" component={MovieDetailsScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Recover" component={RecoverScreen} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

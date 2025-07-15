@@ -1,3 +1,4 @@
+// screens/RegisterScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -5,124 +6,98 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  Alert
 } from 'react-native';
-import { auth } from '../Firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../services/firebase';
 import { useNavigation } from '@react-navigation/native';
 
 export default function RegisterScreen() {
-  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const navigation = useNavigation();
 
   const handleRegister = async () => {
-    if (!email || !senha || !confirmarSenha) {
-      return Alert.alert('Atenção', 'Preencha todos os campos!');
-    }
-
-    if (senha !== confirmarSenha) {
-      return Alert.alert('Erro', 'As senhas não coincidem!');
+    if (!email || !senha) {
+      return Alert.alert('Erro', 'Preencha todos os campos!');
     }
 
     try {
-      await auth().createUserWithEmailAndPassword(email, senha);
-      Alert.alert('Sucesso', 'Conta criada com sucesso!');
-      navigation.navigate('Login');
+      await createUserWithEmailAndPassword(auth, email, senha);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível criar a conta.');
+      Alert.alert('Erro ao cadastrar', error.message);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <Text style={styles.title}>📝 Criar Conta</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Criar Conta</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Seu e-mail"
-        placeholderTextColor="#888"
+        placeholder="E-mail"
+        placeholderTextColor="#ccc"
         value={email}
         onChangeText={setEmail}
-        keyboardType="email-address"
         autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <TextInput
         style={styles.input}
         placeholder="Senha"
-        placeholderTextColor="#888"
-        secureTextEntry
+        placeholderTextColor="#ccc"
         value={senha}
         onChangeText={setSenha}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Confirmar senha"
-        placeholderTextColor="#888"
         secureTextEntry
-        value={confirmarSenha}
-        onChangeText={setConfirmarSenha}
       />
 
-      <TouchableOpacity style={styles.btn} onPress={handleRegister}>
-        <Text style={styles.btnText}>Cadastrar</Text>
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Cadastrar</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>Já tem conta? Entrar</Text>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Text style={styles.link}>Já tenho uma conta</Text>
       </TouchableOpacity>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
-    paddingHorizontal: 30,
+    backgroundColor: '#000',
+    padding: 24,
+    justifyContent: 'center'
   },
   title: {
     fontSize: 28,
     color: '#0077b6',
-    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 30,
-    textTransform: 'uppercase',
+    marginBottom: 32,
+    fontWeight: 'bold'
   },
   input: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#111',
     color: '#fff',
-    borderWidth: 1,
-    borderColor: '#0077b6',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-    fontSize: 16,
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 16
   },
-  btn: {
+  button: {
     backgroundColor: '#0077b6',
-    padding: 15,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16
   },
-  btnText: {
+  buttonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   link: {
     color: '#aaa',
     textAlign: 'center',
-    marginTop: 10,
-    textDecorationLine: 'underline',
-  },
+    marginTop: 8
+  }
 });

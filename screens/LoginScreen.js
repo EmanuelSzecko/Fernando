@@ -1,3 +1,4 @@
+// screens/LoginScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -5,114 +6,102 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  Alert
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { auth } from '../Firebase'; // certifique-se de que esse caminho está correto
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../services/firebase';
+import { useNavigation } from '@react-navigation/native';
 
 export default function LoginScreen() {
-  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const navigation = useNavigation();
 
   const handleLogin = async () => {
     if (!email || !senha) {
-      return Alert.alert('Atenção', 'Preencha todos os campos!');
+      return Alert.alert('Erro', 'Preencha todos os campos!');
     }
+
     try {
       await signInWithEmailAndPassword(auth, email, senha);
-      navigation.replace('Main'); // Redireciona para as abas
     } catch (error) {
-      console.error('Erro ao logar:', error);
-      Alert.alert('Erro', 'E-mail ou senha inválidos.');
+      Alert.alert('Erro ao entrar', error.message);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <Text style={styles.title}>🎥 Bem-vindo!</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>🎬 MovieApp</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Digite seu e-mail"
-        placeholderTextColor="#888"
+        placeholder="E-mail"
+        placeholderTextColor="#ccc"
         value={email}
         onChangeText={setEmail}
-        keyboardType="email-address"
         autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Digite sua senha"
-        placeholderTextColor="#888"
+        placeholder="Senha"
+        placeholderTextColor="#ccc"
         value={senha}
         onChangeText={setSenha}
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.btn} onPress={handleLogin}>
-        <Text style={styles.btnText}>Entrar</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.link}>Criar nova conta</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Entrar</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Recover')}>
-        <Text style={styles.link}>Esqueceu a senha?</Text>
+        <Text style={styles.link}>Esqueci minha senha</Text>
       </TouchableOpacity>
-    </KeyboardAvoidingView>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.link}>Criar conta</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
-    paddingHorizontal: 30,
+    backgroundColor: '#000',
+    padding: 24,
+    justifyContent: 'center'
   },
   title: {
     fontSize: 32,
     color: '#0077b6',
-    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 40,
-    textTransform: 'uppercase',
+    marginBottom: 32,
+    fontWeight: 'bold'
   },
   input: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#111',
     color: '#fff',
-    borderWidth: 1,
-    borderColor: '#0077b6',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-    fontSize: 16,
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 16
   },
-  btn: {
+  button: {
     backgroundColor: '#0077b6',
-    padding: 15,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16
   },
-  btnText: {
+  buttonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   link: {
     color: '#aaa',
     textAlign: 'center',
-    marginTop: 10,
-    textDecorationLine: 'underline',
-  },
+    marginTop: 8
+  }
 });

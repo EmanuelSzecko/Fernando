@@ -1,3 +1,4 @@
+// screens/RecoverScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -5,99 +6,90 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
+  Alert
 } from 'react-native';
-import { auth } from '../Firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../services/firebase';
 import { useNavigation } from '@react-navigation/native';
 
 export default function RecoverScreen() {
-  const navigation = useNavigation();
   const [email, setEmail] = useState('');
+  const navigation = useNavigation();
 
-  const handleReset = async () => {
+  const handleRecover = async () => {
     if (!email) {
-      return Alert.alert('Erro', 'Digite seu e-mail');
+      return Alert.alert('Erro', 'Informe seu e-mail.');
     }
 
     try {
-      await auth().sendPasswordResetEmail(email);
-      Alert.alert('Sucesso', 'Verifique seu e-mail para redefinir sua senha');
-      navigation.navigate('Login');
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert('Pronto!', 'Verifique seu e-mail para redefinir a senha.');
+      navigation.goBack();
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível enviar o e-mail.');
+      Alert.alert('Erro ao recuperar senha', error.message);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <Text style={styles.title}>🔐 Recuperar Senha</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Recuperar Senha</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Digite seu e-mail"
-        placeholderTextColor="#888"
+        placeholderTextColor="#ccc"
         value={email}
         onChangeText={setEmail}
-        keyboardType="email-address"
         autoCapitalize="none"
+        keyboardType="email-address"
       />
 
-      <TouchableOpacity style={styles.btn} onPress={handleReset}>
-        <Text style={styles.btnText}>Enviar link</Text>
+      <TouchableOpacity style={styles.button} onPress={handleRecover}>
+        <Text style={styles.buttonText}>Enviar</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>Voltar para o login</Text>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Text style={styles.link}>Voltar</Text>
       </TouchableOpacity>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
-    paddingHorizontal: 30,
+    backgroundColor: '#000',
+    padding: 24,
+    justifyContent: 'center'
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     color: '#0077b6',
-    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 30,
-    textTransform: 'uppercase',
+    marginBottom: 32,
+    fontWeight: 'bold'
   },
   input: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#111',
     color: '#fff',
-    borderWidth: 1,
-    borderColor: '#0077b6',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-    fontSize: 16,
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 16
   },
-  btn: {
+  button: {
     backgroundColor: '#0077b6',
-    padding: 15,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16
   },
-  btnText: {
+  buttonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   link: {
     color: '#aaa',
     textAlign: 'center',
-    textDecorationLine: 'underline',
-  },
+    marginTop: 8
+  }
 });

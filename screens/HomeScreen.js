@@ -1,80 +1,51 @@
-import React, { useEffect, useState, useRef } from 'react';
+// screens/HomeScreen.js
+import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   FlatList,
+  TouchableOpacity,
   Image,
-  ActivityIndicator,
-  StyleSheet,
-  Animated,
-  Alert,
+  Text,
+  StyleSheet
 } from 'react-native';
-import { getPopularMovies } from '../services/tmdb'; // Certifique-se de que o caminho está correto
+import { getPopularMovies, getImageUrl } from '../services/tmdb';
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen() {
   const [filmes, setFilmes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const navigation = useNavigation();
 
   useEffect(() => {
-    async function carregarFilmes() {
-      console.log('🔄 Buscando filmes populares...');
-      try {
-        const data = await getPopularMovies();
-        if (!data || data.length === 0) {
-          Alert.alert('Erro', 'Nenhum filme encontrado.');
-          return;
-        }
-        console.log('✅ Filmes carregados:', data.length);
-        setFilmes(data);
-      } catch (error) {
-        console.error('🚫 Erro ao carregar filmes:', error);
-        Alert.alert('Erro', 'Não foi possível carregar os filmes.');
-      } finally {
-        setLoading(false);
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }).start();
-      }
+    async function fetchData() {
+      const data = await getPopularMovies();
+      setFilmes(data);
     }
-
-    carregarFilmes();
+    fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#0077b6" />
-        <Text style={styles.loadingText}>Carregando filmes...</Text>
-      </View>
-    );
-  }
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('MovieDetails', { movieId: item.id })}
+    >
+      <Image
+        source={{ uri: getImageUrl(item.poster_path) }}
+        style={styles.image}
+      />
+      <Text style={styles.title} numberOfLines={1}>
+        {item.title}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>🎬 Filmes Populares</Text>
-
       <FlatList
         data={filmes}
-        showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <Animated.View style={{ ...styles.card, opacity: fadeAnim }}>
-            {item.poster_path ? (
-              <Image
-                source={{
-                  uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
-                }}
-                style={styles.poster}
-              />
-            ) : (
-              <Text style={styles.noImage}>Sem imagem</Text>
-            )}
-            <Text style={styles.title}>{item.title}</Text>
-          </Animated.View>
-        )}
+        renderItem={renderItem}
+        numColumns={2}
+        contentContainerStyle={styles.list}
       />
     </View>
   );
@@ -83,55 +54,29 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    paddingHorizontal: 15,
-    paddingTop: 30,
+    backgroundColor: '#000',
+    paddingHorizontal: 12,
+    paddingTop: 10
   },
-  loading: {
-    flex: 1,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#fff',
-    marginTop: 10,
-    fontSize: 16,
-  },
-  header: {
-    fontSize: 26,
-    color: '#0077b6',
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    textTransform: 'uppercase',
+  list: {
+    paddingBottom: 20
   },
   card: {
-    backgroundColor: '#1f1f1f',
-    borderRadius: 10,
-    marginBottom: 20,
-    padding: 10,
-    shadowColor: '#0077b6',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 6,
+    backgroundColor: '#111',
+    borderRadius: 8,
+    margin: 6,
+    flex: 1,
+    overflow: 'hidden',
+    alignItems: 'center'
   },
-  poster: {
-    width: '100%',
-    height: 350,
-    borderRadius: 10,
+  image: {
+    height: 220,
+    width: '100%'
   },
   title: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  noImage: {
-    color: '#ccc',
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
+    fontWeight: 'bold',
+    padding: 8,
+    fontSize: 14
+  }
 });
